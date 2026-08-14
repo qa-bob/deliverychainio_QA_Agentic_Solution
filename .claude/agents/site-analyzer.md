@@ -1,3 +1,14 @@
+---
+name: site-analyzer
+description: Crawls a live website and produces a fully-populated site.config.json with discovered nav links, forms, metadata, and feature flags. Use when onboarding a new site, re-validating config after a redesign, or running /analyze-site.
+model: sonnet
+tools:
+  - WebFetch
+  - Read
+  - Write
+  - Bash
+---
+
 # Agent: site-analyzer
 
 ## Role

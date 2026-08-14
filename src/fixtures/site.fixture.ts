@@ -10,10 +10,13 @@
  */
 
 import { test as base, expect } from '@playwright/test';
-import { loadSiteConfig, type SiteConfig } from '@types/site-config.types';
+import { loadSiteConfig, type SiteConfig } from '../types/site-config.types';
 import { HomePage } from '@pages/home.page';
 import { NavigationPage } from '@pages/navigation.page';
 import { ContactFormPage } from '@pages/contact.page';
+import { SolutionsPage } from '@pages/solutions.page';
+import { AboutPage } from '@pages/about.page';
+import { NewsletterPage } from '@pages/newsletter.page';
 
 // ── Fixture type definitions ─────────────────────────────────────────────────
 
@@ -26,6 +29,12 @@ export interface Fixtures {
   navigationPage: NavigationPage;
   /** ContactFormPage page object (does not auto-navigate) */
   contactPage: ContactFormPage;
+  /** SolutionsPage page object (does not auto-navigate) */
+  solutionsPage: SolutionsPage;
+  /** AboutPage page object (does not auto-navigate) */
+  aboutPage: AboutPage;
+  /** NewsletterPage page object (does not auto-navigate) */
+  newsletterPage: NewsletterPage;
 }
 
 // ── Extended test object ─────────────────────────────────────────────────────
@@ -66,6 +75,30 @@ export const test = base.extend<Fixtures>({
   contactPage: async ({ page, siteConfig }, use) => {
     const contactPage = new ContactFormPage(page, siteConfig);
     await use(contactPage);
+  },
+
+  /**
+   * solutionsPage — constructs SolutionsPage without navigating.
+   */
+  solutionsPage: async ({ page, siteConfig }, use) => {
+    const solutionsPage = new SolutionsPage(page, siteConfig);
+    await use(solutionsPage);
+  },
+
+  /**
+   * aboutPage — constructs AboutPage without navigating.
+   */
+  aboutPage: async ({ page, siteConfig }, use) => {
+    const aboutPage = new AboutPage(page, siteConfig);
+    await use(aboutPage);
+  },
+
+  /**
+   * newsletterPage — constructs NewsletterPage without navigating.
+   */
+  newsletterPage: async ({ page, siteConfig }, use) => {
+    const newsletterPage = new NewsletterPage(page, siteConfig);
+    await use(newsletterPage);
   },
 });
 

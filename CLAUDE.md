@@ -50,6 +50,8 @@ Build and maintain a comprehensive GUI, functional, and regression test suite fo
 - Strict mode is enabled (`tsconfig.json`)
 - All page object properties must be typed
 - Run `npx tsc --noEmit` to check for errors before finishing
+- **Import `SiteConfig` using a relative path** (`../types/site-config.types`) — the `@types/*` alias conflicts with TypeScript's reserved DefinitelyTyped namespace and will cause TS6137
+- Path aliases `@pages/*`, `@utils/*`, `@fixtures/*` work correctly; use relative imports for anything in `src/types/`
 
 ---
 

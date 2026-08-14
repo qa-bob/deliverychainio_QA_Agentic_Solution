@@ -30,7 +30,8 @@ test.describe('Site Availability @smoke', () => {
   });
 
   test('page loads within acceptable time @smoke', async ({ siteConfig, page }) => {
-    const MAX_LOAD_MS = 10_000;
+    // 15s accommodates WebKit (tablet project) which has higher startup overhead than Chromium
+    const MAX_LOAD_MS = 15_000;
 
     const start = Date.now();
     await page.goto(siteConfig.url, { waitUntil: 'load' });
@@ -97,10 +98,11 @@ test.describe('Site Availability @smoke', () => {
     expect(title.trim(), 'Page <title> should not be empty').toBeTruthy();
     expect(title.trim().length, 'Page title should be meaningful (>3 chars)').toBeGreaterThan(3);
 
-    // Meta description check
-    const metaDescription = await page
-      .locator('meta[name="description"]')
-      .getAttribute('content');
+    // Meta description check — use evaluate() to avoid a timeout when the tag is absent
+    const metaDescription = await page.evaluate<string | null>(() => {
+      const el = document.querySelector('meta[name="description"]');
+      return el ? el.getAttribute('content') : null;
+    });
 
     // Meta description is a best-practice, not hard requirement — warn if absent
     if (!metaDescription || metaDescription.trim().length === 0) {

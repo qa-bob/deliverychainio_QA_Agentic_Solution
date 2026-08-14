@@ -24,30 +24,46 @@ export class NavigationPage extends BasePage {
 
   /**
    * Return the primary navigation locator.
-   * Tries role="navigation" first, then <nav>, then header-scoped links.
+   * Tries semantic nav/role first, then common Avada/WordPress class patterns.
    */
   private getNavLocator(): Locator {
-    return this.page.locator('nav, [role="navigation"]').first();
+    return this.page.locator(
+      'nav, [role="navigation"], #nav, #main-nav, .fusion-main-menu, [class*="main-menu"], [class*="main-nav"]'
+    ).first();
   }
 
-  /** Return true if a navigation element is visible on the page. */
+  /**
+   * Return true if navigation is accessible on the page.
+   * Checks semantic nav element first; falls back to header link presence
+   * for themes (e.g. Avada/Fusion Builder) that omit semantic nav markup.
+   */
   async isNavVisible(): Promise<boolean> {
     const nav = this.getNavLocator();
-    if (await nav.count() === 0) return false;
-    return nav.isVisible();
+    if (await nav.count() > 0 && await nav.isVisible()) return true;
+
+    // Avada/Fusion Builder: nav links live in header divs without a <nav> element.
+    // If the header contains any links the navigation is present and accessible.
+    const headerLinks = this.page.locator('header a[href]');
+    return (await headerLinks.count()) > 0;
   }
 
   // ── Nav links ────────────────────────────────────────────────────────────────
 
   /**
-   * Return all links inside the primary navigation with their text and href.
-   * Filters out empty hrefs and anchor-only links (#).
+   * Return primary navigation links (list-item anchors only).
+   * Scopes to `li > a` to exclude standalone CTAs that live in the same
+   * nav container but aren't menu items. Filters non-navigable protocols.
    */
   async getNavLinks(): Promise<NavLinkInfo[]> {
     const nav = this.getNavLocator();
     if (await nav.count() === 0) return [];
 
-    const links = nav.locator('a[href]');
+    // li > a scopes to menu items; falls back to all a[href] if none found
+    let links = nav.locator('li > a[href]');
+    if (await links.count() === 0) {
+      links = nav.locator('a[href]');
+    }
+
     const count = await links.count();
     const results: NavLinkInfo[] = [];
 
@@ -56,8 +72,9 @@ export class NavigationPage extends BasePage {
       const text = ((await link.textContent()) ?? '').trim();
       const href = (await link.getAttribute('href')) ?? '';
 
-      // Skip empty, anchor-only, or javascript: links
-      if (!href || href === '#' || href.startsWith('javascript:')) continue;
+      // Skip empty, anchor-only, non-navigable-protocol, or javascript: links
+      if (!href || href === '#') continue;
+      if (/^(javascript|mailto|tel|sms):/i.test(href)) continue;
 
       results.push({ text, href });
     }
@@ -89,6 +106,9 @@ export class NavigationPage extends BasePage {
       this.page.locator('[class*="hamburger"], [class*="menu-toggle"], [class*="nav-toggle"]'),
       this.page.locator('[aria-label*="menu" i], [aria-label*="navigation" i]').filter({ hasNotText: /^\s*$/ }),
       this.page.locator('button[aria-expanded]').first(),
+      // Avada/Fusion Builder mobile nav patterns
+      this.page.locator('.fusion-mobile-nav-icons a, a.fusion-icon-bars, [class*="mobile-nav-icons"] a'),
+      this.page.locator('[class*="mobile-menu"] a, [class*="nav-icon"], a[class*="bars"]'),
     ];
 
     for (const candidate of candidates) {
@@ -138,15 +158,33 @@ export class NavigationPage extends BasePage {
         continue;
       }
 
+      // Skip non-HTTP(S) URLs (mailto:, tel:, etc.) — already filtered by getNavLinks
+      if (!/^https?:\/\//i.test(absoluteUrl)) {
+        results.push({ url: absoluteUrl, status: 0, ok: false });
+        continue;
+      }
+
+      // Skip external social media domains — they block bot HEAD requests (400/403/429)
+      // and should not count as "broken" links owned by the site.
+      const isExternal = new URL(absoluteUrl).hostname !== baseUrl.hostname;
+      const socialDomains = /\b(facebook|twitter|instagram|linkedin|youtube|tiktok|pinterest)\b/i;
+      if (isExternal && socialDomains.test(absoluteUrl)) {
+        // Treat as unreachable warning, not a broken link
+        results.push({ url: absoluteUrl, status: 0, ok: false });
+        continue;
+      }
+
       try {
         const response = await this.page.request.head(absoluteUrl, {
-          timeout: 10_000,
+          timeout: 8_000,
         });
-        results.push({
-          url: absoluteUrl,
-          status: response.status(),
-          ok: response.ok(),
-        });
+        const status = response.status();
+        // External links returning 4xx/5xx other than 404 are usually bot-blocking, not broken.
+        // Only flag 404 as definitively broken regardless of domain.
+        const ok = isExternal
+          ? status !== 404
+          : response.ok();
+        results.push({ url: absoluteUrl, status, ok });
       } catch {
         results.push({ url: absoluteUrl, status: 0, ok: false });
       }

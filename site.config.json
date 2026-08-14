@@ -1,23 +1,27 @@
-﻿{
-    "name":  "DeliveryChain.io",
-    "url":  "https://deliverychain.io",
-    "description":  "",
-    "industry":  "",
-    "hasContactForm":  true,
-    "expectedNavItems":  [
-
-                         ],
-    "viewports":  [
-                      "desktop",
-                      "mobile",
-                      "tablet"
-                  ],
-    "skipVisual":  false,
-    "skipForms":  false,
-    "auth":  {
-                 "required":  false,
-                 "loginUrl":  "",
-                 "username":  "",
-                 "password":  ""
-             }
+{
+    "name": "DeliveryChain.io",
+    "url": "https://deliverychain.io",
+    "description": "Supply chain intelligence platform delivering IoT-powered freight tracking, automated alerts, and real-time operational insights.",
+    "industry": "Supply Chain / Logistics SaaS",
+    "hasContactForm": true,
+    "expectedNavItems": [
+        "Home",
+        "About",
+        "Solutions",
+        "Blog",
+        "Contact Us"
+    ],
+    "viewports": [
+        "desktop",
+        "mobile",
+        "tablet"
+    ],
+    "skipVisual": false,
+    "skipForms": false,
+    "auth": {
+        "required": false,
+        "loginUrl": "",
+        "username": "",
+        "password": ""
+    }
 }

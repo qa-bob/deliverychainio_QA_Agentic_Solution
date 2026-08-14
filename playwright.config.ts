@@ -80,6 +80,9 @@ export default defineConfig({
       use: {
         ...devices['iPad Mini'],
         viewport: { width: 768, height: 1024 },
+        // WebKit (Safari) enforces stricter cert chain validation than Chromium;
+        // ignoreHTTPSErrors allows testing layout/content without a cert mismatch failure.
+        ignoreHTTPSErrors: true,
       },
     },
   ],

@@ -1,3 +1,16 @@
+---
+name: test-generator
+description: Reads site.config.json and generates site-specific Playwright TypeScript test files with POM page objects for functionality not covered by the generic suite. Use when asked to generate tests for a specific page, feature, or scenario, or when running /generate-full-suite.
+model: sonnet
+tools:
+  - WebFetch
+  - Read
+  - Write
+  - Bash
+  - Glob
+  - Grep
+---
+
 # Agent: test-generator
 
 ## Role

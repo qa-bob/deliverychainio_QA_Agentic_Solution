@@ -1,0 +1,149 @@
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      test_suite:
+        description: 'Test suite to run'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - smoke
+          - navigation
+          - forms
+          - functional
+          - visual
+          - responsive
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Playwright Tests (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium-desktop]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: TypeScript type check
+        run: npm run typecheck
+
+      - name: Run tests (all suites)
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.test_suite == 'all' }}
+        run: npm test -- --project=${{ matrix.project }}
+        env:
+          CI: true
+          SITE_URL: ${{ vars.SITE_URL || 'https://deliverychain.io' }}
+
+      - name: Run smoke tests only
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_suite == 'smoke' }}
+        run: npm run test:smoke -- --project=${{ matrix.project }}
+        env:
+          CI: true
+
+      - name: Run navigation tests only
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_suite == 'navigation' }}
+        run: npm run test:navigation -- --project=${{ matrix.project }}
+        env:
+          CI: true
+
+      - name: Run forms tests only
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_suite == 'forms' }}
+        run: npm run test:forms -- --project=${{ matrix.project }}
+        env:
+          CI: true
+
+      - name: Run functional tests only
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_suite == 'functional' }}
+        run: npx playwright test --grep @functional --project=${{ matrix.project }}
+        env:
+          CI: true
+
+      - name: Run visual tests only
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_suite == 'visual' }}
+        run: npm run test:visual -- --project=${{ matrix.project }}
+        env:
+          CI: true
+
+      - name: Run responsive tests only
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.test_suite == 'responsive' }}
+        run: npm run test:responsive -- --project=${{ matrix.project }}
+        env:
+          CI: true
+
+      - name: Upload Playwright HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-${{ matrix.project }}
+          path: playwright-report/
+          retention-days: 14
+
+      - name: Upload test results (JSON)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.project }}
+          path: test-results/
+          retention-days: 7
+
+      - name: Upload failure screenshots and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: failure-artifacts-${{ matrix.project }}
+          path: |
+            test-results/**/*.png
+            test-results/**/*.zip
+          retention-days: 7
+
+  smoke-only:
+    name: Smoke Gate (fast)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Smoke tests (PR gate)
+        run: npm run test:smoke -- --project=chromium-desktop
+        env:
+          CI: true
+          SITE_URL: ${{ vars.SITE_URL || 'https://deliverychain.io' }}
