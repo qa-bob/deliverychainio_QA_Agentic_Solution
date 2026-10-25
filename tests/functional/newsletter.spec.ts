@@ -16,7 +16,7 @@ test.describe('Newsletter Form @functional @forms', () => {
   test.beforeEach(async ({ page, siteConfig }) => {
     // Newsletter form is on the homepage
     await page.goto(siteConfig.url, { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   // ── Form presence ─────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ test.describe('Newsletter Form @functional @forms', () => {
     const emailEl = newsletterPage.emailField;
 
     // HTML5 type="email" inputs are invalid when the value is not a valid email
-    const isValid = await emailEl.evaluate<boolean>((el) => {
+    const isValid = await emailEl.evaluate((el) => {
       return (el as HTMLInputElement).validity?.valid ?? true;
     });
 
