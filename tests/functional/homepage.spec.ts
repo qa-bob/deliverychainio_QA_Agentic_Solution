@@ -92,10 +92,8 @@ test.describe('Homepage Functional @functional', () => {
     const imgs = page.locator('header img, [class*="hero"] img, section:first-of-type img');
     const all = await imgs.all();
 
-    if (all.length === 0) {
-      // No images in the hero area — not a failure
-      return;
-    }
+    // No images in the hero area — not a failure
+    test.skip(all.length === 0, 'No images in the hero area');
 
     const missingAlt: string[] = [];
     for (const img of all) {

@@ -17,7 +17,7 @@ import { test, expect } from '@fixtures/site.fixture';
 test.describe('Homepage IoT Features @functional', () => {
   test.beforeEach(async ({ page, siteConfig }) => {
     await page.goto(siteConfig.url, { waitUntil: 'domcontentloaded' });
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('homepage contains IoT feature keywords @functional', async ({ page }) => {
